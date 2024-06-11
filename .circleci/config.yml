@@ -3,7 +3,7 @@ version: 2.1
 executors:
   python-executor:
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
 
 jobs:
   setup-environment:
@@ -58,7 +58,7 @@ jobs:
             python scripts/check_parsing_results.py /workspace/parsed_results
 
 workflows:
-  version: 2
+  
   test-junit-modification:
     jobs:
       - setup-environment
