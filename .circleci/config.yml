@@ -1,0 +1,73 @@
+version: 2.1
+
+executors:
+  python-executor:
+    docker:
+      - image: circleci/python:3.8
+
+jobs:
+  setup-environment:
+    executor: python-executor
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+
+  modify-junit-xml:
+    executor: python-executor
+    steps:
+      - checkout
+      - run:
+          name: Modify JUnit XML
+          command: |
+            echo 'This XML file does not appear to have any style information associated with it.' > junit.xml
+            cat original_junit.xml >> junit.xml
+      - persist_to_workspace:
+          root: .
+          paths:
+            - junit.xml
+
+  split-and-parse-tests:
+    executor: python-executor
+    steps:
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Run Test Splitting and Parsing
+          command: |
+            . venv/bin/activate
+            python scripts/split_and_parse.py /workspace/junit.xml
+      - persist_to_workspace:
+          root: /workspace
+          paths:
+            - parsed_results
+
+  check-parsing-results:
+    executor: python-executor
+    steps:
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Check Parsing Results
+          command: |
+            . venv/bin/activate
+            python scripts/check_parsing_results.py /workspace/parsed_results
+
+workflows:
+  version: 2
+  test-junit-modification:
+    jobs:
+      - setup-environment
+      - modify-junit-xml:
+          requires:
+            - setup-environment
+      - split-and-parse-tests:
+          requires:
+            - modify-junit-xml
+      - check-parsing-results:
+          requires:
+            - split-and-parse-tests
