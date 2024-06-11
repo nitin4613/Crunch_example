@@ -16,6 +16,11 @@ jobs:
             python -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
+      - run:
+          name: Run tests and generate JUnit report
+          command: |
+            . venv/bin/activate
+            pytest --junitxml=original_junit.xml
 
   modify-junit-xml:
     executor: python-executor
